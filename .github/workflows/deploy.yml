@@ -29,20 +29,19 @@ jobs:
       - name: Extract project
         run: |
           unzip -q textbook-project.zip
-          test -f textbook-src/package.json
-          sed -i "s|export default defineConfig({|export default defineConfig({\n  base: '/3D-Book/',|" textbook-src/vite.config.ts
+          test -f package.json
+          test -f vite.config.ts
+          sed -i "s|export default defineConfig({|export default defineConfig({\n  base: '/3D-Book/',|" vite.config.ts
       - name: Install dependencies
-        working-directory: textbook-src
         run: npm ci
       - name: Build
-        working-directory: textbook-src
         run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: textbook-src/dist
+          path: dist
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
