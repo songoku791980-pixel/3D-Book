@@ -22,26 +22,46 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Extract project
+          node-version: 22
+
+      - name: Extract project and locate app
         run: |
-          unzip -oq textbook-project.zip
-          test -f package.json
-          test -f vite.config.ts
-          sed -i "s|export default defineConfig({|export default defineConfig({\n  base: '/3D-Book/',|" vite.config.ts
+          mkdir -p source
+          unzip -oq textbook-project.zip -d source
+          PACKAGE_FILE="$(find source -type f -name package.json -not -path '*/node_modules/*' | head -n 1)"
+          if [ -z "$PACKAGE_FILE" ]; then
+            echo "Could not find package.json in the uploaded ZIP."
+            find source -maxdepth 3 -type f | head -n 80
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$PACKAGE_FILE")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found app in: $PROJECT_DIR"
+          cat "$PACKAGE_FILE"
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f "$PROJECT_DIR/package-lock.json" ]; then
+            npm ci --prefix "$PROJECT_DIR"
+          else
+            npm install --prefix "$PROJECT_DIR"
+          fi
+
       - name: Build
-        run: npm run build
+        run: npm --prefix "$PROJECT_DIR" run build -- --base=/3D-Book/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: ${{ env.PROJECT_DIR }}/dist
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
