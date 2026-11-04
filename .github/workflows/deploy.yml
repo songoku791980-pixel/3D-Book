@@ -28,7 +28,7 @@ jobs:
           node-version: 20
       - name: Extract project
         run: |
-          unzip -q textbook-project.zip
+          unzip -oq textbook-project.zip
           test -f package.json
           test -f vite.config.ts
           sed -i "s|export default defineConfig({|export default defineConfig({\n  base: '/3D-Book/',|" vite.config.ts
